@@ -716,15 +716,15 @@ class RoboClaw(object):
 
     def SpeedM1(self, val):
         with self._lock:
-            return _writeS4(Cmd.M1SPEED,val)
+            return self._writeS4(Cmd.M1SPEED,val)
 
     def SpeedM2(self, val):
         with self._lock:
-            return _writeS4(Cmd.M2SPEED,val)
+            return self._writeS4(Cmd.M2SPEED,val)
 
-    def SpeedM1M2(m1,m2):
+    def SpeedM1M2(self, m1, m2):
         with self._lock:
-            return _writeS4S4(Cmd.MIXEDSPEED,m1,m2)
+            return self._writeS4S4(Cmd.MIXEDSPEED,m1,m2)
 
     def SpeedAccelM1(self,accel,speed):
         with self._lock:

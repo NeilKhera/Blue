@@ -1,4 +1,5 @@
-float32 drive
-float32 turn
+float32 arc_radius
+float32 arc_length
+float32 angular_velocity
 ---
 string info

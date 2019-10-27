@@ -7,12 +7,9 @@ from roboclaw.roboclaw import RoboClaw
 from skid_steering.srv import SkidSteer, SkidSteerResponse
 
 class SkidSteering:
-  SPEED = 500
-
   WHEEL_DIA = 0.21
-  GEAR_RATIO = 0.01
+  WHEEL_BASE = 0.47625
   ENC_COUNTS_PER_REV = 1024
-  ENC_COUNTS_PER_TURN = ENC_COUNTS_PER_REV * GEAR_RATIO
 
   def __init__(self):
     self._roboclaws = {
@@ -34,15 +31,15 @@ class SkidSteering:
   def _drive_callback(self, req):
     print('Executing drive...')
     
-    if req.drive != 0:
-      distance = (req.drive / (math.pi * self.WHEEL_DIA)) * self.ENC_COUNTS_PER_REV * 4  
-      if req.drive < 0:
-        speed = -speed
-      self.turn_left_wheels(int(self.SPEED), int(distance))
-      self.turn_right_wheels(int(self.SPEED), int(distance))
-    elif req.drive != 0:
-      print 'not yet implemented'
-    
+    arc_radius = req.arc_radius
+    arc_length = req.arc_length
+    angular_velocity = req.angular_velocity
+
+    distance = (arc_length / (math.pi * self.WHEEL_DIA)) * self.ENC_COUNTS_PER_REV * 4 
+
+    self.turn_left_wheels(int(angular_velocity * (arc_radius - self.WHEEL_BASE / 2)), int(distance))
+    self.turn_right_wheels(int(angular_velocity * (arc_radius + self.WHEEL_BASE / 2)), int(distance))
+
     return SkidSteerResponse('Drive completed...')
 
 if __name__ == '__main__':
