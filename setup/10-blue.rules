@@ -1,3 +1,3 @@
-SUBSYSTEM=="usb", ATTRS{idProduct}=="c0e0", ATTRS{idVendor}=="1d5a", ATTRS{serial}=="0001000C-000008FD", SYMLINK+="imu"
+SUBSYSTEM=="usb", ATTRS{idProduct}=="c0e0", ATTRS{idVendor}=="1d5a", ATTRS{serial}=="0001000C-000008FD", SYMLINK+="imu", MODE="0666"
 SUBSYSTEM=="tty", ATTRS{product}=="USB Roboclaw 2x45A", SYMLINK+="left", MODE="0666"
 SUBSYSTEM=="tty", ATTRS{product}=="USB Roboclaw 2x30A", SYMLINK+="right", MODE="0666"
