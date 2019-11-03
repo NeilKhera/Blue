@@ -2,10 +2,8 @@ cmake_minimum_required(VERSION 2.8.3)
 project(nov4demo)
 
 find_package(catkin REQUIRED COMPONENTS
-  geometry_msgs
   nav_msgs
   roscpp
-  sensor_msgs
   std_msgs
 )
 
