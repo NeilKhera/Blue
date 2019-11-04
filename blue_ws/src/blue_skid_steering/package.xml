@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>skid_steering</name>
+  <name>blue_skid_steering</name>
   <version>1.1.0</version>
-  <description>The skid_steering package</description>
+  <description>The blue_skid_steering package</description>
 
   <maintainer email="nkhera@andrew.cmu.edu">Neil Khera</maintainer>
   <license>BSD</license>

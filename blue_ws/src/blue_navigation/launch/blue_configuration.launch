@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find realsense2_camera)/launch/rs_rgbd.launch"/>
+  <include file="$(find blue_skid_steering)/launch/blue_drive.launch"/>
+  <node pkg="blue_setup_tf" type="blue_tf" name="tf_broadcaster"/>
+</launch

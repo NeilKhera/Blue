@@ -10,3 +10,6 @@
 [submodule "blue_ws/src/fsm_imu"]
 	path = blue_ws/src/fsm_imu
 	url = https://github.com/jsford/fsm_imu.git
+[submodule "blue_ws/src/differential-drive"]
+	path = blue_ws/src/differential-drive
+	url = https://github.com/jfstepha/differential-drive

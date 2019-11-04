@@ -1,3 +1,4 @@
+#include <cmath> 
 #include <pcl/common/transforms.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/voxel_grid.h>
@@ -9,6 +10,11 @@
 
 using namespace pcl;
 
+float CAMERA_ANGLE;
+float CAMERA_HEIGHT;
+float CAMERA_X_LIMIT;
+float ANGLE_THRESHOLD;
+
 ros::Publisher grid_pub;
 
 PointCloud<PointXYZRGB>::Ptr frameTransform(PointCloud<PointXYZRGB>::Ptr cloud) {
@@ -17,7 +23,7 @@ PointCloud<PointXYZRGB>::Ptr frameTransform(PointCloud<PointXYZRGB>::Ptr cloud) 
   transform_matrix.rotate(Eigen::AngleAxisf(-M_PI / 2, Eigen::Vector3f::UnitZ()));
   transform_matrix.rotate(Eigen::AngleAxisf(-(M_PI / 2) - CAMERA_ANGLE, Eigen::Vector3f::UnitX()));
 
-  PointCloud<PointXYZRGB>::Ptr cloud_corrected(new PointCloud<PointXYZRGB>());
+  PointCloud<PointXYZRGB>::Ptr cloud_corrected (new PointCloud<PointXYZRGB>());
   transformPointCloud(*cloud, *cloud_corrected, transform_matrix);
   return cloud_corrected;
 }
@@ -26,8 +32,6 @@ void downSample(PointCloud<PointXYZRGB>::Ptr cloud, double x_dim, double y_dim, 
   VoxelGrid<PointXYZRGB> vox;
   vox.setInputCloud(cloud);
   vox.setLeafSize(x_dim, y_dim, z_dim);
-  vox.setFilterFieldName("x");
-  vox.setFilterLimits(0, CAMERA_X_LIMIT);
   vox.filter(*cloud);
 }
 
@@ -60,7 +64,7 @@ PointCloud<PointXYZI>::Ptr normalAnalysis(PointCloud<Normal>::Ptr normals, Point
     p.z = point.z;
 
     if (theta > ANGLE_THRESHOLD && theta < M_PI - ANGLE_THRESHOLD) {
-      p.intensity = 1;
+      p.intensity = 100;
     } else if (theta < ANGLE_THRESHOLD) {
       p.intensity = (int) ((theta / ANGLE_THRESHOLD) * 100);
     } else {
@@ -73,34 +77,31 @@ PointCloud<PointXYZI>::Ptr normalAnalysis(PointCloud<Normal>::Ptr normals, Point
 
 nav_msgs::OccupancyGrid getOccupancy(PointCloud<PointXYZI>::Ptr cloud) {
   int size = 100 * 100;
-  int8_t[size] grid = {};
-  int8_t[size] count = {};
-  std::fill_n(grid, size, -1);
+  std::vector<int8_t> grid;
+  grid.resize(size, -1);
+  std::vector<int8_t> count;
+  count.resize(size, 0);
 
   for (int i = 0; i < cloud->points.size(); i++) {
     PointXYZI p = cloud->points[i];
-    index_row = 
-    index_col =
+    int index_row = (int) std::fmin(100.0, std::fmax(((5.0 - p.x) * 100) / 5.0, 0.0));
+    int index_col = (int) std::fmin(100.0, std::fmax(((2.5 - p.y) * 100) / 5.0, 0.0));
 
     int index = index_row * 100 + index_col;
     if (count[index] == 0) {
       grid[index] = p.intensity;
       count[index] = 1;
     } else {
-      grid[index] = grid[index] + p.intensity;
+      grid[index] = ((grid[index] * count[index]) + p.intensity) / (count[index] + 1);
       count[index] = count[index] + 1;
     }
   }
 
-  for (int i = 0; i < size; i++) {
-    if (grid[i] != -1) {
-      grid[i] = grid[i] / count[i];
-    }
-  }
-
   nav_msgs::OccupancyGrid og;
-  og.header = cloud->header;
-  og.info.map_load_time = cloud->header.stamp;
+  og.header.seq = cloud->header.seq;
+  og.header.stamp = ros::Time::now();
+  og.header.frame_id = cloud->header.frame_id;
+  og.info.map_load_time = og.header.stamp;
   og.info.resolution = 0.05;
   og.info.width = 100;
   og.info.height = 100;
@@ -121,7 +122,7 @@ void mapCallback(const PointCloud<PointXYZRGB>::ConstPtr &cloud) {
   PointCloud<PointXYZRGB>::Ptr cloud_transformed = frameTransform(cloud_converted);
 
   downSample(cloud_transformed, 0.05, 0.05, 0.05);
-  PointCloud<Normal>::Ptr cloud_normals = computeNormal(cloud_tranformed, 0.08);
+  PointCloud<Normal>::Ptr cloud_normals = computeNormals(cloud_transformed, 0.08);
   PointCloud<PointXYZI>::Ptr cloud_analysed = normalAnalysis(cloud_normals, cloud_transformed);
 
   nav_msgs::OccupancyGrid og = getOccupancy(cloud_analysed);
@@ -129,10 +130,15 @@ void mapCallback(const PointCloud<PointXYZRGB>::ConstPtr &cloud) {
 }
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "nov4demo");
+  ros::init(argc, argv, "pointcloud_smasher");
   ros::NodeHandle nh;
 
-  ros::Subscriber sub = nh.subscribe<PointCloud<PointXYZI>>("/camera/depth_registered/points", 1, mapCallback); 
+  nh.getParam("/ranger_brinkmanship/CAMERA_ANGLE", CAMERA_ANGLE);
+  nh.getParam("/ranger_brinkmanship/CAMERA_HEIGHT", CAMERA_HEIGHT);
+  nh.getParam("/ranger_brinkmanship/CAMERA_X_LIMIT", CAMERA_X_LIMIT);
+  nh.getParam("/ranger_brinkmanship/ANGLE_THRESHOLD", ANGLE_THRESHOLD);
+
+  ros::Subscriber sub = nh.subscribe<PointCloud<PointXYZRGB>>("/camera/depth_registered/points", 1, mapCallback); 
   grid_pub = nh.advertise<nav_msgs::OccupancyGrid>("/blue/gameplan", 1);
   
   ros::spin();
