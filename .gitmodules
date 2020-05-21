@@ -1,15 +1,6 @@
 [submodule "blue_ws/src/teleop_twist_keyboard"]
 	path = blue_ws/src/teleop_twist_keyboard
 	url = https://github.com/ros-teleop/teleop_twist_keyboard
-[submodule "blue_ws/src/VINS-Fusion"]
-	path = blue_ws/src/VINS-Fusion
-	url = https://github.com/HKUST-Aerial-Robotics/VINS-Fusion.git
-[submodule "blue_ws/src/realsense-ros"]
-	path = blue_ws/src/realsense-ros
-	url = https://github.com/IntelRealSense/realsense-ros.git
 [submodule "blue_ws/src/fsm_imu"]
 	path = blue_ws/src/fsm_imu
 	url = https://github.com/jsford/fsm_imu.git
-[submodule "blue_ws/src/differential-drive"]
-	path = blue_ws/src/differential-drive
-	url = https://github.com/jfstepha/differential-drive
