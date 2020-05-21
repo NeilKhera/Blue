@@ -1,51 +1,44 @@
 #!/usr/bin/env python
 
-import math
 import rospy
-import numpy as np
-from roboclaw.roboclaw import RoboClaw
-from geometry_msgs.msg import Twist
+import math
 from geometry_msgs.msg import Quaternion
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Int16
+from roboclaw.roboclaw import RoboClaw
 
-LINEAR_SPEED = 0.1
-ANGULAR_SPEED = 0.25
-WHEEL_BASE = 0.4953
-WHEEL_RADIUS = 0.105
-WHEEL_DIA = 0.21
+WHEEL_DIA = 0.206375
+WHEEL_BASE = 0.47625
 TICKS_PER_REV = 4096
 
 roboclaws = {
-  'left': RoboClaw("/dev/left", 115200),
-  'right': RoboClaw("/dev/right", 115200)
+    'left': RoboClaw("/dev/left", 115200),
+    'right': RoboClaw("/dev/right", 115200)
 }
 
 def talker():
-  pub = rospy.Publisher('Odom', Odometry, queue_size=3)
-  rospy.init_node('skid_steering_subscriber', anonymous=True)
-  rospy.Subscriber('cmd_vel', Twist, drive_callback)
-  rate = rospy.Rate(10)
+    pub = rospy.Publisher('/Blue/Odom', Odometry, queue_size=3)
+    rospy.init_node('odometry', anonymous=True)
+    rate = rospy.Rate(10)
 
-  claw_left = roboclaws['left']
-  claw_right = roboclaws['right']
+    claw_left = roboclaws['left']
+    claw_right = roboclaws['right']
 
-  prev_enc_left_m1 = claw_left.ReadEncM1()[1]
-  prev_enc_left_m2 = claw_left.ReadEncM2()[1]
-  prev_enc_right_m1 = claw_right.ReadEncM1()[1]
-  prev_enc_right_m2 = claw_right.ReadEncM2()[1]
+    prev_enc_left_m1 = claw_left.ReadEncM1()[1]
+    prev_enc_left_m2 = claw_left.ReadEncM2()[1]
+    prev_enc_right_m1 = claw_right.ReadEncM1()[1]
+    prev_enc_right_m2 = claw_right.ReadEncM2()[1]
 
-  curr_x = 0
-  curr_y = 0
-  curr_theta = 0
-  curr_time = rospy.Time.now()
+    curr_x = 0
+    curr_y = 0
+    curr_theta = 0
+    curr_time = rospy.Time.now()
 
-  prev_x = 0
-  prev_y = 0
-  prev_theta = 0
-  prev_time = rospy.Time.now()
+    prev_x = 0
+    prev_y = 0
+    prev_theta = 0
+    prev_time = rospy.Time.now()
 
-  while not rospy.is_shutdown():
+    while not rospy.is_shutdown():
 
         rate.sleep()
 
@@ -56,7 +49,7 @@ def talker():
         curr_enc_left_m2 = claw_left.ReadEncM2()[1]
         curr_enc_right_m1 = claw_right.ReadEncM1()[1]
         curr_enc_right_m2 = claw_right.ReadEncM2()[1]
-
+    
         curr_enc_left = float(curr_enc_left_m1 + curr_enc_left_m2) / 2
         curr_enc_right = float(curr_enc_right_m1 + curr_enc_right_m2) / 2
 
@@ -96,6 +89,7 @@ def talker():
         curr_x = prev_x + (time_step / 6) * (k00 + 2 * (k10 + k20) + k30)
         curr_y = prev_y + (time_step / 6) * (k01 + 2 * (k11 + k21) + k31)
         curr_theta = prev_theta + (time_step / 6) * (k02 + 2 * (k12 + k22) + k32)
+        print(curr_theta)
 
         prev_enc_left_m1 = curr_enc_left_m1
         prev_enc_left_m2 = curr_enc_left_m2
@@ -124,25 +118,11 @@ def talker():
         odom.twist.twist.linear.x = v
         odom.twist.twist.linear.y = 0
         odom.twist.twist.angular.z = w
-
+        
         pub.publish(odom)
 
-def turn_left_wheels(speed):
-  claw = roboclaws['left']
-  claw.SpeedM1M2(speed, speed)
-  
-def turn_right_wheels(speed):
-  claw = roboclaws['right']
-  claw.SpeedM1M2(speed, speed)
-
-def drive_callback(msg):
-  turn_left_wheels(int((((msg.linear.x * LINEAR_SPEED) - (msg.angular.z * ANGULAR_SPEED) * WHEEL_BASE / 2) / WHEEL_RADIUS) * TICKS_PER_REV / 2))
-  turn_right_wheels(int((((msg.linear.x * LINEAR_SPEED) + (msg.angular.z * ANGULAR_SPEED) * WHEEL_BASE / 2) / WHEEL_RADIUS) * TICKS_PER_REV / 2))
-
 if __name__ == '__main__':
-  try:
-    talker()
-  except rospy.ROSInterruptException:
-    roboclaws['left'].SpeedM1M2(0, 0)
-    roboclaws['right'].SpeedM1M2(0, 0)
-    pass
+    try:
+        talker()
+    except rospy.ROSInterruptException:
+        pass
